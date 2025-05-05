@@ -1,4 +1,5 @@
 from flask import Flask, request, jsonify
+from typing import Optional
 import logging
 import random
 
@@ -71,13 +72,13 @@ def handle_dialogue(res: dict, req: dict) -> None:
                 "Первый раз слышу об этом городе. Попробуй еще разок!"
 
 
-def get_city(req: dict) -> str | None:
+def get_city(req: dict) -> Optional[str]:
     for entity in req["request"]["nlu"]["entities"]:
         if entity["type"] == "YANDEX.GEO":
             return entity["value"].get("city", None)
 
 
-def get_first_name(req: dict) -> str | None:
+def get_first_name(req: dict) -> Optional[str]:
     for entity in req["request"]["nlu"]["entities"]:
         if entity["type"] == "YANDEX.FIO":
             return entity["value"].get("first_name", None)
