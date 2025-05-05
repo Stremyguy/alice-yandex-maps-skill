@@ -2,13 +2,13 @@ import requests
 from math import sin, cos, sqrt, atan2, radians
 
 
-def get_coordinates(city):
+def get_coordinates(city: str) -> list:
     url = "https://geocode-maps.yandex.ru/1.x/"
 
     params = {
         'geocode': city,
         'format': 'json',
-        'apikey': "40d1649f-0493-4b70-98ba-98533de7710b"
+        'apikey': "8013b162-6b42-4997-9691-77b7074026e0"
     }
 
     response = requests.get(url, params)
@@ -19,13 +19,13 @@ def get_coordinates(city):
     return point_array
 
 
-def get_country(city):
+def get_country(city: str) -> dict:
     url = "https://geocode-maps.yandex.ru/1.x/"
 
     params = {
         'geocode': city,
         'format': 'json',
-        'apikey': "40d1649f-0493-4b70-98ba-98533de7710b"
+        'apikey': "8013b162-6b42-4997-9691-77b7074026e0"
     }
 
     response = requests.get(url, params)
@@ -37,7 +37,7 @@ def get_country(city):
             'AddressDetails']['Country']['CountryName']
 
 
-def get_distance(p1, p2):
+def get_distance(p1: float, p2: float) -> float:
     R = 6373.0
 
     lon1 = radians(p1[0])

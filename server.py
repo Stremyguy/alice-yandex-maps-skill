@@ -1,6 +1,6 @@
 from flask import Flask, request, jsonify
-from geo import get_country, get_distance, get_coordinates
 import logging
+from geo import get_country, get_distance, get_coordinates
 
 app = Flask(__name__)
 
@@ -29,12 +29,14 @@ def main() -> dict:
 
 
 def handle_dialogue(res: dict, req: dict) -> None:
+    user_id = req["session"]["user_id"]
     if req["session"]["new"]:
         res["response"]["text"] = \
             "Привет! Я могу показать город или сказать расстояние между городами!"
         return
     
     cities = get_cities(req)
+    res["response"]["text"] = str(cities)
     
     if not cities:
         res["response"]["text"] = "Ты не написал название ни одного города!"
