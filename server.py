@@ -39,6 +39,10 @@ def main() -> dict:
 def handle_dialogue(res: dict, req: dict) -> None:
     user_id = req["session"]["user_id"]
     
+    res["response"]["buttons"] = [
+        {"title": "Помощь", "hide": True}
+    ]
+    
     if req["session"]["new"]:
         res["response"]["text"] = "Привет! Назови свое имя!"
         sessionStorage[user_id] = {
@@ -46,21 +50,25 @@ def handle_dialogue(res: dict, req: dict) -> None:
             "game_started": False
         }
         return
-    
+
     if sessionStorage[user_id]["first_name"] is None:
-        first_name = get_first_name(req)
-        
-        if first_name is None:
-            res["response"]["text"] = \
-                "Не расслышала имя. Повтори, пожалуйста!"
+        if "помощь" in req["request"]["nlu"]["tokens"]:
+            res["response"]["text"] = "Тебе надо отгадать город по отправленной фотке.\nСейчас тебе надо отправить своё имя!"
         else:
-            sessionStorage[user_id]["first_name"] = first_name
-            sessionStorage[user_id]["guessed_cities"] = []
-            res["response"]["text"] = f"Приятно познакомиться, {first_name.title()}. Я - Алиса. Отгадаешь город по фото?"
-            res["response"]["buttons"] = [
-                {"title": "Да", "hide": True},
-                {"title": "Нет", "hide": True}
-            ]
+            first_name = get_first_name(req)
+            
+            if first_name is None:
+                res["response"]["text"] = \
+                    "Не расслышала имя. Повтори, пожалуйста!"
+            else:
+                sessionStorage[user_id]["first_name"] = first_name
+                sessionStorage[user_id]["guessed_cities"] = []
+                res["response"]["text"] = f"Приятно познакомиться, {first_name.title()}. Я - Алиса. Отгадаешь город по фото?"
+                res["response"]["buttons"] = [
+                    {"title": "Да", "hide": True},
+                    {"title": "Нет", "hide": True},
+                    {"title": "Помощь", "hide": True},
+                ]
     else:
         if not sessionStorage[user_id]["game_started"]:
             if "да" in req["request"]["nlu"]["tokens"]:
@@ -74,6 +82,8 @@ def handle_dialogue(res: dict, req: dict) -> None:
             elif "нет" in req["request"]["nlu"]["tokens"]:
                 res["response"]["text"] = "Ну и ладно!"
                 res["end_session"] = True
+            elif "помощь" in req["request"]["nlu"]["tokens"]:
+                res["response"]["text"] = "Тебе надо отгадать город по отправленной фотке.\nДля начала игры напиши 'да'."
             else:
                 res["response"]["text"] = "Не поняла ответа! Так да или нет?"
                 res["response"]["buttons"] = [
@@ -88,38 +98,45 @@ def play_game(res: dict, req: dict) -> None:
     user_id = req["session"]["user_id"]
     attempt = sessionStorage[user_id]["attempt"]
     
-    if attempt == 1:
-        city = random.choice(list(cities))
-        while city in sessionStorage[user_id]["guessed_cities"]:
-            city = random.choice(list(cities))
-        sessionStorage[user_id]["city"] = city
-        res["response"]["card"] = {
-            "type": "BigImage",
-            "title": "Что это за город?",
-            "image_id": cities[city][attempt - 1]
-        }
-        res["response"]["text"] = "Тогда сыграем!"
+    res["response"]["buttons"] = [
+        {"title": "Помощь", "hide": True}
+    ]
+    
+    if "помощь" in req["request"]["nlu"]["tokens"]:
+        res["response"]["text"] = "Тебе надо отгадать город по отправленной фотке.\nВводи ответ!"
     else:
-        city = sessionStorage[user_id]["city"]
-        if get_city(req) == city:
-            res["response"]["text"] = "Правильно! Сыграем ещё?"
-            sessionStorage[user_id]["guessed_cities"].append(city)
-            sessionStorage[user_id]["game_started"] = False
-            return
+        if attempt == 1:
+            city = random.choice(list(cities))
+            while city in sessionStorage[user_id]["guessed_cities"]:
+                city = random.choice(list(cities))
+            sessionStorage[user_id]["city"] = city
+            res["response"]["card"] = {
+                "type": "BigImage",
+                "title": "Что это за город?",
+                "image_id": cities[city][attempt - 1]
+            }
+            res["response"]["text"] = "Тогда сыграем!"
         else:
-            if attempt == 3:
-                res["response"]["text"] = f"Вы пытались. Это {city.title()}. Сыграем ещё?"
-                sessionStorage[user_id]["game_started"] = False
+            city = sessionStorage[user_id]["city"]
+            if get_city(req) == city:
+                res["response"]["text"] = "Правильно! Сыграем ещё?"
                 sessionStorage[user_id]["guessed_cities"].append(city)
+                sessionStorage[user_id]["game_started"] = False
                 return
             else:
-                res["response"]["card"] = {
-                    "type": "BigImage",
-                    "title": "Неправильно. Вот тебе дополнительное фото",
-                    "image_id": cities[city][attempt - 1]
-                }
-                res["response"]["text"] = "А вот и не угадал!"
-    sessionStorage[user_id]["attempt"] += 1
+                if attempt == 3:
+                    res["response"]["text"] = f"Вы пытались. Это {city.title()}. Сыграем ещё?"
+                    sessionStorage[user_id]["game_started"] = False
+                    sessionStorage[user_id]["guessed_cities"].append(city)
+                    return
+                else:
+                    res["response"]["card"] = {
+                        "type": "BigImage",
+                        "title": "Неправильно. Вот тебе дополнительное фото",
+                        "image_id": cities[city][attempt - 1]
+                    }
+                    res["response"]["text"] = "А вот и не угадал!"
+        sessionStorage[user_id]["attempt"] += 1
 
 
 def get_city(req: dict) -> Optional[str]:
