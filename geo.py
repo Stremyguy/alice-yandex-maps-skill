@@ -37,6 +37,33 @@ def get_country(city: str) -> dict:
             'AddressDetails']['Country']['CountryName']
 
 
+def get_geo_info(city_name: str, type_info: str) -> list | dict | None:
+    if type_info not in ["country", "coordinates"]:
+        return
+    
+    url = "https://geocode-maps.yandex.ru/1.x/"
+
+    params = {
+        "geocode": city_name,
+        "format": "json",
+        "apikey": "8013b162-6b42-4997-9691-77b7074026e0"
+    }
+    
+    response = requests.get(url, params)
+    json = response.json()
+    
+    if type_info == "country":
+        return \
+        json["response"]["GeoObjectCollection"]["featureMember"][0]["GeoObject"]["metaDataProperty"][
+            "GeocoderMetaData"][
+            "AddressDetails"]["Country"]["CountryName"]
+    elif type_info == "coordinates":
+        point_str = json["response"]["GeoObjectCollection"]["featureMember"][0]["GeoObject"]["Point"]["pos"]
+        point_array = [float(x) for x in point_str.split()]
+
+        return point_array
+
+
 def get_distance(p1: float, p2: float) -> float:
     R = 6373.0
 
